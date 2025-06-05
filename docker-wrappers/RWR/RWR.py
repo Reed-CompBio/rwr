@@ -52,11 +52,14 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
     # Run pagerank algorithm on directed graph
     scores = nx.pagerank(graph,personalization={n:1 for n in nodelist},alpha=alpha)
 
+
     with output_file.open('w') as output_f:
         output_f.write("Node\tScore\n")
-        for node in list(scores.keys()).sort(desc=True):
+        node_scores = list(scores.items())
+        node_scores.sort(reverse=True,key=lambda kv: (kv[1], kv[0]))
+        for node in node_scores:
             #todo: filter scores based on threshold value 
-                output_f.write(f"{node}\t{scores.get(node)}\n")
+                output_f.write(f"{node[0]}\t{node[1]}\n")
     return
 
 
