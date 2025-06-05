@@ -58,14 +58,16 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
 
     source_scores = nx.pagerank(source_graph,personalization={n:1 for n in sources},alpha=alpha)
     target_scores = nx.pagerank(target_graph,personalization={n:1 for n in targets},alpha=alpha)
+
+    #While merge_scores currently returns the average of the two scores, alternate methods such as taking
+    #the minimum of the two scores may be used 
     total_scores = merge_scores(source_scores,target_scores)
 
     with output_file.open('w') as output_f:
-        for node in total_scores.keys():
-            if total_scores.get(node) > 0.1:
-                for edge in edgelist:
-                    if node in edge[0] or node in edge[1]:
-                        output_f.write(f"{edge[0]}\t{edge[1]}\n")
+        output_f.write("Node\tScore\n")
+        for node in list(total_scores.keys()).sort(desc=True):
+            #todo: filter scores based on threshold value 
+                output_f.write(f"{node}\t{total_scores.get(node)}\n")
     return
 
 def merge_scores(sources,targets):
