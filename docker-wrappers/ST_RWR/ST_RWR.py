@@ -34,33 +34,41 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
     # Create the parent directories for the output file if needed
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
+    # Read in network file
     edgelist = []
     with open(network_file) as file:
          for line in file:
             edge = line.split('|')
             edge[1] = edge[1].strip('\n')
             edgelist.append(edge)
-    
+
+    # Read in sources file
     sources = []
     with open(source_nodes_file) as source_nodes:
         for line in source_nodes:
             source = line.split('\t')
             sources.append(source[0].strip('\n'))
 
+    # Read in targets file
     targets = []
     with open(target_nodes_file) as target_nodes:
         for line in target_nodes:
             target = line.split('\t')
             targets.append(target[0].strip('\n'))
 
+    # Create directed graph from input network
     source_graph = nx.DiGraph(edgelist)
+
+    # Create reversed graph to run pagerank on targets
     target_graph = source_graph.reverse(copy= True)
 
+    # Run pagegrank algorithm on source and target graph seperatly
     source_scores = nx.pagerank(source_graph,personalization={n:1 for n in sources},alpha=alpha)
     target_scores = nx.pagerank(target_graph,personalization={n:1 for n in targets},alpha=alpha)
 
-    #While merge_scores currently returns the average of the two scores, alternate methods such as taking
-    #the minimum of the two scores may be used 
+    # Merge scores from source and target pagerank runs
+    # While merge_scores currently returns the average of the two scores, alternate methods such as taking
+    # the minimum of the two scores may be used 
     total_scores = merge_scores(source_scores,target_scores)
 
     with output_file.open('w') as output_f:
