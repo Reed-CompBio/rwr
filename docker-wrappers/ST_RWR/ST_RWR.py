@@ -73,9 +73,11 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
 
     with output_file.open('w') as output_f:
         output_f.write("Node\tScore\n")
-        for node in list(total_scores.keys()).sort(desc=True):
+        node_scores = list(total_scores.items())
+        node_scores.sort(reverse=True,key=lambda kv: (kv[1], kv[0]))
+        for node in node_scores:
             #todo: filter scores based on threshold value 
-                output_f.write(f"{node}\t{total_scores.get(node)}\n")
+                output_f.write(f"{node[0]}\t{node[1]}\n")
     return
 
 def merge_scores(sources,targets):
