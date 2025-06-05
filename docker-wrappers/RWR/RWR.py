@@ -13,7 +13,7 @@ def parse_arguments():
     parser.add_argument("--network", type=Path, required=True, help="Path to the network file with '|' delimited node pairs")
     parser.add_argument("--nodes", type=Path, required=True, help="Path to the nodes file")
     parser.add_argument("--output", type=Path, required=True, help="Path to the output file that will be written")
-    parser.add_argument("--alpha", type=float, required=False, help="Optional alpha value for the RWR algorithm (defaults to 0.85)")
+    parser.add_argument("--alpha", type=float, required=False, default=0.85, help="Optional alpha value for the RWR algorithm (defaults to 0.85)")
 
     return parser.parse_args()
 
@@ -25,6 +25,8 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
         raise OSError(f"Nodes file {str(nodes_file)} does not exist")
     if output_file.exists():
         print(f"Output file {str(output_file)} will be overwritten")
+    if not alpha > 0 or not alpha <=1:
+        raise ValueError("Alpha value must be between 0 and 1")
 
     # Create the parent directories for the output file if needed
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -43,23 +45,15 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
             nodelist.append(node[0].strip('\n'))
 
     graph = nx.DiGraph(edgelist)
-    scores = nx.pagerank(graph,personalization=add_ST(nodelist),alpha=alpha)
+    scores = nx.pagerank(graph,personalization={n:1 for n in nodelist},alpha=alpha)
 
-#todo: threshold should to be adjusted automatically 
     with output_file.open('w') as output_f:
         for node in scores.keys():
             if scores.get(node) > 0.1:
                 for edge in edgelist:
                     if node in edge[0] or node in edge[1]:
                         output_f.write(f"{edge[0]}\t{edge[1]}\n")
-
-
-def add_ST(nodes):
-    output = {}
-    for node in nodes:
-        output.update({node:1})
-    return output
-
+    return
 
 
 def main():
