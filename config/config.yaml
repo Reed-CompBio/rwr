@@ -47,13 +47,13 @@ container_registry:
 algorithms:
       - name: "strwr"
         params:
-              include: false
+              include: true
               run1:
                   alpha: [0.85]
       
       - name: "rwr"
         params:
-              include: true
+              include: false
               run1:
                   alpha: [0.85]
 
