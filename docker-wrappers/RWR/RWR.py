@@ -31,6 +31,7 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
     # Create the parent directories for the output file if needed
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
+    # Read in network file
     edgelist = []
     with open(network_file) as file:
          for line in file:
@@ -38,13 +39,17 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
             edge[1] = edge[1].strip('\n')
             edgelist.append(edge)
     
+    # Read in node file (combined sources and targets)
     nodelist = []
     with open(nodes_file) as n_file:
         for line in n_file:
             node = line.split('\t')
             nodelist.append(node[0].strip('\n'))
 
+    # Create directed graph from input network
     graph = nx.DiGraph(edgelist)
+
+    # Run pagerank algorithm on directed graph
     scores = nx.pagerank(graph,personalization={n:1 for n in nodelist},alpha=alpha)
 
     with output_file.open('w') as output_f:
