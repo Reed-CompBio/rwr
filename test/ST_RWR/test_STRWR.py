@@ -20,7 +20,7 @@ OUT_FILE = Path(TEST_DIR, 'output', 'strwr-output.txt')
 
 class TestSTRWR:
     """
-    Run the local neighborhood algorithm on the example input files and check the output matches the expected output
+    Run the ST_RWR algorithm on the example input files and check the output matches the expected output
     """
     def test_ln(self):
         OUT_FILE.unlink(missing_ok=True)
@@ -34,7 +34,7 @@ class TestSTRWR:
         assert cmp(OUT_FILE, expected_file, shallow=False), 'Output file does not match expected output file'
 
     """
-    Run the local neighborhood algorithm with a missing input file
+    Run the ST_RWR algorithm with a missing input file
     """
     def test_missing_file(self):
         with pytest.raises(OSError):
@@ -45,7 +45,7 @@ class TestSTRWR:
                             output_file=OUT_FILE)
 
     """
-    Run the local neighborhood algorithm with an improperly formatted network file
+    Run the ST_RWR algorithm with an improperly formatted network file
     """
     def test_format_error(self):
         with pytest.raises(ValueError):

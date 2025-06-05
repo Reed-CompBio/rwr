@@ -45,10 +45,6 @@ container_registry:
 # careful: too many parameters might make your runs take a long time.
 
 algorithms:
-      - name: "localneighborhood"
-        params:
-              include: false
-
       - name: "strwr"
         params:
               include: false
