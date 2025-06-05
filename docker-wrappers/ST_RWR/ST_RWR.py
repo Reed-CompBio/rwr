@@ -14,7 +14,7 @@ def parse_arguments():
     parser.add_argument("--sources", type=Path, required=True, help="Path to the source nodes file")
     parser.add_argument("--targets", type=Path, required=True, help="Path to the target nodes file")
     parser.add_argument("--output", type=Path, required=True, help="Path to the output file that will be written")
-    parser.add_argument("--alpha", type=float, required=False, help="Optional alpha value for the RWR algorithm (defaults to 0.85)")
+    parser.add_argument("--alpha", type=float, required=False, default=0.85, help="Optional alpha value for the RWR algorithm (defaults to 0.85)")
 
     return parser.parse_args()
 
@@ -28,6 +28,8 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
         raise OSError(f"Nodes file {str(target_nodes_file)} does not exist")
     if output_file.exists():
         print(f"Output file {str(output_file)} will be overwritten")
+    if not alpha > 0 or not alpha <=1:
+        raise ValueError("Alpha value must be between 0 and 1")
 
     # Create the parent directories for the output file if needed
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -54,18 +56,17 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
     source_graph = nx.DiGraph(edgelist)
     target_graph = source_graph.reverse(copy= True)
 
-    source_scores = nx.pagerank(source_graph,personalization=add_ST(sources),alpha=alpha)
-    target_scores = nx.pagerank(target_graph,personalization=add_ST(targets),alpha=alpha)
+    source_scores = nx.pagerank(source_graph,personalization={n:1 for n in sources},alpha=alpha)
+    target_scores = nx.pagerank(target_graph,personalization={n:1 for n in targets},alpha=alpha)
     total_scores = merge_scores(source_scores,target_scores)
 
-
-#todo: threshold should to be adjusted automatically 
     with output_file.open('w') as output_f:
         for node in total_scores.keys():
             if total_scores.get(node) > 0.1:
                 for edge in edgelist:
                     if node in edge[0] or node in edge[1]:
                         output_f.write(f"{edge[0]}\t{edge[1]}\n")
+    return
 
 def merge_scores(sources,targets):
     output = {}
@@ -73,13 +74,6 @@ def merge_scores(sources,targets):
     for node in nodes:
         output.update({node:((sources.get(node)+targets.get(node))/2)})
     return output
-
-def add_ST(nodes):
-    output = {}
-    for node in nodes:
-        output.update({node:1})
-    return output
-
 
 
 def main():
