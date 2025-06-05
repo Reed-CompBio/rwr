@@ -48,11 +48,10 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
     scores = nx.pagerank(graph,personalization={n:1 for n in nodelist},alpha=alpha)
 
     with output_file.open('w') as output_f:
-        for node in scores.keys():
-            if scores.get(node) > 0.1:
-                for edge in edgelist:
-                    if node in edge[0] or node in edge[1]:
-                        output_f.write(f"{edge[0]}\t{edge[1]}\n")
+        output_f.write("Node\tScore\n")
+        for node in list(scores.keys()).sort(desc=True):
+            #todo: filter scores based on threshold value 
+                output_f.write(f"{node}\t{scores.get(node)}\n")
     return
 
 
