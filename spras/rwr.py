@@ -17,6 +17,7 @@ class RWR(PRM):
             if input_type not in filename_map:
                 raise ValueError(f"{input_type} filename is missing")
 
+        # Get sources and targets for node input file
         if data.contains_node_columns(["sources","targets"]):
             sources = data.request_node_columns(["sources"])
             targets = data.request_node_columns(["targets"])
@@ -25,8 +26,8 @@ class RWR(PRM):
         else:
             raise ValueError("Invalid node data")
 
+        # Get edge data for network file
         edges = data.get_interactome()
-
         edges.to_csv(filename_map['network'],sep='|',index=False,columns=['Interactor1','Interactor2'],header=False)
         
 
@@ -44,6 +45,7 @@ class RWR(PRM):
                     raise ValueError(f"Edge {line} does not contain 2 nodes separated by '|'") 
         work_dir = '/spras'
 
+        # Each volume is a tuple (src, dest)
         volumes = list()
 
         bind_path, nodes_file = prepare_volume(nodes, work_dir)
@@ -52,7 +54,10 @@ class RWR(PRM):
         bind_path, network_file = prepare_volume(network, work_dir)
         volumes.append(bind_path)  
 
-        out_dir = Path(output_file).parent     
+        # RWR does not provide an argument to set the output directory
+        # Use its --output argument to set the output file prefix to specify an absolute path and prefix
+        out_dir = Path(output_file).parent    
+        # RWR requires that the output directory exist 
         out_dir.mkdir(parents=True, exist_ok=True)
         bind_path, mapped_out_dir = prepare_volume(str(out_dir), work_dir)
         volumes.append(bind_path)
@@ -63,6 +68,7 @@ class RWR(PRM):
                    '--nodes',nodes_file,
                    '--output', mapped_out_prefix]
         
+        # Add alpha as an optional argument
         if alpha is not None:
             command.extend(['--alpha', str(alpha)])
 
@@ -74,6 +80,8 @@ class RWR(PRM):
                             work_dir)
         
         print(out)
+        # Rename the primary output file to match the desired output filename
+        # Currently RWR only writes one output file so we do not need to delete others
         output_edges = Path(out_dir,'out')
         output_edges.rename(output_file)
 
