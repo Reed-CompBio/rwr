@@ -13,7 +13,7 @@ def parse_arguments():
     parser.add_argument("--network", type=Path, required=True, help="Path to the network file with '|' delimited node pairs")
     parser.add_argument("--nodes", type=Path, required=True, help="Path to the nodes file")
     parser.add_argument("--output", type=Path, required=True, help="Path to the output file that will be written")
-    parser.add_argument("--alpha", type=float, required=False, help="Optional alpha value for the RWR algorithm (defaults to 0.85)")
+    parser.add_argument("--alpha", type=float, required=False, default=0.85, help="Optional alpha value for the RWR algorithm (defaults to 0.85)")
 
     return parser.parse_args()
 
@@ -25,10 +25,13 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
         raise OSError(f"Nodes file {str(nodes_file)} does not exist")
     if output_file.exists():
         print(f"Output file {str(output_file)} will be overwritten")
+    if not alpha > 0 or not alpha <=1:
+        raise ValueError("Alpha value must be between 0 and 1")
 
     # Create the parent directories for the output file if needed
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
+    # Read in network file
     edgelist = []
     with open(network_file) as file:
          for line in file:
@@ -36,30 +39,28 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
             edge[1] = edge[1].strip('\n')
             edgelist.append(edge)
     
+    # Read in node file (combined sources and targets)
     nodelist = []
     with open(nodes_file) as n_file:
         for line in n_file:
             node = line.split('\t')
             nodelist.append(node[0].strip('\n'))
 
+    # Create directed graph from input network
     graph = nx.DiGraph(edgelist)
-    scores = nx.pagerank(graph,personalization=add_ST(nodelist),alpha=alpha)
 
-#todo: threshold should to be adjusted automatically 
+    # Run pagerank algorithm on directed graph
+    scores = nx.pagerank(graph,personalization={n:1 for n in nodelist},alpha=alpha)
+
+
     with output_file.open('w') as output_f:
-        for node in scores.keys():
-            if scores.get(node) > 0.1:
-                for edge in edgelist:
-                    if node in edge[0] or node in edge[1]:
-                        output_f.write(f"{edge[0]}\t{edge[1]}\n")
-
-
-def add_ST(nodes):
-    output = {}
-    for node in nodes:
-        output.update({node:1})
-    return output
-
+        output_f.write("Node\tScore\n")
+        node_scores = list(scores.items())
+        node_scores.sort(reverse=True,key=lambda kv: (kv[1], kv[0]))
+        for node in node_scores:
+            #todo: filter scores based on threshold value 
+                output_f.write(f"{node[0]}\t{node[1]}\n")
+    return
 
 
 def main():
