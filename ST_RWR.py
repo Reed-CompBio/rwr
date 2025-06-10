@@ -40,8 +40,8 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
          for line in file:
             components = line.split('|')
             edge = [s.strip() for s in components]
-            weight = edge[2] if len(edge) > 1 else 1
-            graph.add_edge(edge[0], edge[1], weight=weight)
+            weight = edge[2] if len(edge) > 2 else 1
+            source_graph.add_edge(edge[0], edge[1], weight=float(weight))
 
     # Read in sources file
     sources = []

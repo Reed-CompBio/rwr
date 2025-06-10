@@ -2,7 +2,7 @@
 
 An implementation of the source-targets random-walk-with-restarts and the general input random-walk-with-restarts algorithms.
 
-Requires Python3 and `networkx`. More packaging information is available at `pyproject.toml`.
+Requires Python3, `networkx`, `numpy`, and `scipy`. More packaging information is available at `pyproject.toml`.
 
 Licensed under MIT.
 
