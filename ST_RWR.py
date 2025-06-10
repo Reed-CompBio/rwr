@@ -62,7 +62,7 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
     # Create reversed graph to run pagerank on targets
     target_graph = source_graph.reverse(copy= True)
 
-    # Run pagegrank algorithm on source and target graph seperatly
+    # Run pagegrank algorithm on source and target graph separately
     source_scores = nx.pagerank(source_graph,personalization={n:1 for n in sources},alpha=alpha)
     target_scores = nx.pagerank(target_graph,personalization={n:1 for n in targets},alpha=alpha)
 

@@ -1,0 +1,9 @@
+[project]
+name = "rwr"
+version = "0.1.0"
+description = "Random Walk with Restarts"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "networkx>=3.5",
+]
