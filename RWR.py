@@ -32,13 +32,14 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Read in network file
-    edgelist = []
+    graph = nx.DiGraph()
     with open(network_file) as file:
          for line in file:
-            edge = line.split('|')
-            edge[1] = edge[1].strip('\n')
-            edgelist.append(edge)
-    
+            components = line.split('|')
+            edge = [s.strip() for s in components]
+            weight = edge[2] if len(edge) > 1 else 1
+            graph.add_edge(edge[0], edge[1], weight=weight)
+
     # Read in node file (combined sources and targets)
     nodelist = []
     with open(nodes_file) as n_file:
@@ -46,20 +47,15 @@ def RWR(network_file: Path, nodes_file: Path, alpha: float, output_file: Path):
             node = line.split('\t')
             nodelist.append(node[0].strip('\n'))
 
-    # Create directed graph from input network
-    graph = nx.DiGraph(edgelist)
-
     # Run pagerank algorithm on directed graph
-    scores = nx.pagerank(graph,personalization={n:1 for n in nodelist},alpha=alpha)
-
+    scores = nx.pagerank(graph,personalization={n:1 for n in nodelist},alpha=alpha, weight="weight")
 
     with output_file.open('w') as output_f:
         output_f.write("Node\tScore\n")
         node_scores = list(scores.items())
         node_scores.sort(reverse=True,key=lambda kv: (kv[1], kv[0]))
         for node in node_scores:
-            #todo: filter scores based on threshold value 
-                output_f.write(f"{node[0]}\t{node[1]}\n")
+            output_f.write(f"{node[0]}\t{node[1]}\n")
     return
 
 

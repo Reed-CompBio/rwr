@@ -35,12 +35,13 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Read in network file
-    edgelist = []
+    source_graph = nx.DiGraph()
     with open(network_file) as file:
          for line in file:
-            edge = line.split('|')
-            edge[1] = edge[1].strip('\n')
-            edgelist.append(edge)
+            components = line.split('|')
+            edge = [s.strip() for s in components]
+            weight = edge[2] if len(edge) > 1 else 1
+            graph.add_edge(edge[0], edge[1], weight=weight)
 
     # Read in sources file
     sources = []
@@ -56,15 +57,12 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
             target = line.split('\t')
             targets.append(target[0].strip('\n'))
 
-    # Create directed graph from input network
-    source_graph = nx.DiGraph(edgelist)
-
     # Create reversed graph to run pagerank on targets
-    target_graph = source_graph.reverse(copy= True)
+    target_graph = source_graph.reverse(copy=True)
 
     # Run pagegrank algorithm on source and target graph separately
-    source_scores = nx.pagerank(source_graph,personalization={n:1 for n in sources},alpha=alpha)
-    target_scores = nx.pagerank(target_graph,personalization={n:1 for n in targets},alpha=alpha)
+    source_scores = nx.pagerank(source_graph,personalization={n:1 for n in sources},alpha=alpha, weight="weight")
+    target_scores = nx.pagerank(target_graph,personalization={n:1 for n in targets},alpha=alpha, weight="weight")
 
     # Merge scores from source and target pagerank runs
     # While merge_scores currently returns the average of the two scores, alternate methods such as taking
@@ -76,8 +74,7 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
         node_scores = list(total_scores.items())
         node_scores.sort(reverse=True,key=lambda kv: (kv[1], kv[0]))
         for node in node_scores:
-            #todo: filter scores based on threshold value 
-                output_f.write(f"{node[0]}\t{node[1]}\n")
+            output_f.write(f"{node[0]}\t{node[1]}\n")
     return
 
 def merge_scores(sources,targets):
