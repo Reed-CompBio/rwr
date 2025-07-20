@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 import networkx as nx
 
+
 def parse_arguments():
     """
     Process command line arguments.
@@ -10,16 +11,50 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Random walk with restarts pathway reconstruction"
     )
-    parser.add_argument("--network", type=Path, required=True, help="Path to the network file with '|' delimited node pairs")
-    parser.add_argument("--sources", type=Path, required=True, help="Path to the source nodes file")
-    parser.add_argument("--targets", type=Path, required=True, help="Path to the target nodes file")
-    parser.add_argument("--output", type=Path, required=True, help="Path to the output file that will be written")
-    parser.add_argument("--alpha", type=float, required=False, default=0.85, help="Optional alpha value for the RWR algorithm (defaults to 0.85)")
+    parser.add_argument(
+        "--network",
+        type=Path,
+        required=True,
+        help="Path to the network file with '|' delimited node pairs",
+    )
+    parser.add_argument(
+        "--sources", type=Path, required=True, help="Path to the source nodes file"
+    )
+    parser.add_argument(
+        "--targets", type=Path, required=True, help="Path to the target nodes file"
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        required=True,
+        help="Path to the output file that will be written",
+    )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        required=False,
+        default=0.85,
+        help="Optional alpha value for the RWR algorithm (defaults to 0.85)",
+    )
+    parser.add_argument(
+        "--max-iter",
+        type=int,
+        required=False,
+        default=100,
+        help="Maximum number of iterations in power method eigenvalue solver (defaults to 100)",
+    )
 
     return parser.parse_args()
 
 
-def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alpha: float, output_file: Path):
+def RWR(
+    network_file: Path,
+    source_nodes_file: Path,
+    target_nodes_file: Path,
+    alpha: float,
+    max_iter: int,
+    output_file: Path,
+):
     if not network_file.exists():
         raise OSError(f"Network file {str(network_file)} does not exist")
     if not source_nodes_file.exists():
@@ -28,7 +63,7 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
         raise OSError(f"Nodes file {str(target_nodes_file)} does not exist")
     if output_file.exists():
         print(f"Output file {str(output_file)} will be overwritten")
-    if not alpha > 0 or not alpha <=1:
+    if not alpha > 0 or not alpha <= 1:
         raise ValueError("Alpha value must be between 0 and 1")
 
     # Create the parent directories for the output file if needed
@@ -37,8 +72,8 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
     # Read in network file
     source_graph = nx.DiGraph()
     with open(network_file) as file:
-         for line in file:
-            components = line.split('|')
+        for line in file:
+            components = line.split("|")
             edge = [s.strip() for s in components]
             weight = edge[2] if len(edge) > 2 else 1
             source_graph.add_edge(edge[0], edge[1], weight=float(weight))
@@ -47,41 +82,54 @@ def RWR(network_file: Path, source_nodes_file: Path,target_nodes_file: Path, alp
     sources = []
     with open(source_nodes_file) as source_nodes:
         for line in source_nodes:
-            source = line.split('\t')
-            sources.append(source[0].strip('\n'))
+            source = line.split("\t")
+            sources.append(source[0].strip("\n"))
 
     # Read in targets file
     targets = []
     with open(target_nodes_file) as target_nodes:
         for line in target_nodes:
-            target = line.split('\t')
-            targets.append(target[0].strip('\n'))
+            target = line.split("\t")
+            targets.append(target[0].strip("\n"))
 
     # Create reversed graph to run pagerank on targets
     target_graph = source_graph.reverse(copy=True)
 
     # Run pagegrank algorithm on source and target graph separately
-    source_scores = nx.pagerank(source_graph,personalization={n:1 for n in sources},alpha=alpha, weight="weight")
-    target_scores = nx.pagerank(target_graph,personalization={n:1 for n in targets},alpha=alpha, weight="weight")
+    source_scores = nx.pagerank(
+        source_graph,
+        personalization={n: 1 for n in sources},
+        alpha=alpha,
+        max_iter=max_iter,
+        weight="weight",
+    )
+    target_scores = nx.pagerank(
+        target_graph,
+        personalization={n: 1 for n in targets},
+        alpha=alpha,
+        max_iter=max_iter,
+        weight="weight",
+    )
 
     # Merge scores from source and target pagerank runs
     # While merge_scores currently returns the average of the two scores, alternate methods such as taking
-    # the minimum of the two scores may be used 
-    total_scores = merge_scores(source_scores,target_scores)
+    # the minimum of the two scores may be used
+    total_scores = merge_scores(source_scores, target_scores)
 
-    with output_file.open('w') as output_f:
+    with output_file.open("w") as output_f:
         output_f.write("Node\tScore\n")
         node_scores = list(total_scores.items())
-        node_scores.sort(reverse=True,key=lambda kv: (kv[1], kv[0]))
+        node_scores.sort(reverse=True, key=lambda kv: (kv[1], kv[0]))
         for node in node_scores:
             output_f.write(f"{node[0]}\t{node[1]}\n")
     return
 
-def merge_scores(sources,targets):
+
+def merge_scores(sources, targets):
     output = {}
     nodes = sources.keys()
     for node in nodes:
-        output.update({node:((sources.get(node)+targets.get(node))/2)})
+        output.update({node: ((sources.get(node) + targets.get(node)) / 2)})
     return output
 
 
@@ -90,7 +138,7 @@ def main():
     Parse arguments and run pathway reconstruction
     """
     args = parse_arguments()
-    RWR(args.network, args.sources, args.targets, args.alpha, args.output)
+    RWR(args.network, args.sources, args.targets, args.alpha, args.max_iter, args.output)
 
 
 if __name__ == "__main__":
